@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NBA 球星投票系统</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      padding: 30px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    /* 全局提示框 */
+    .message-box {
+      padding: 14px 20px;
+      border-radius: 8px;
+      margin: 0 auto 20px;
+      max-width: 1000px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-box.success {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    .message-box.error {
+      background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    /* 登录/注册页面 */
+    .auth-box {
+      max-width: 450px;
+      margin: 30px auto;
+      padding: 40px;
+      background: #fafbfc;
+      border-radius: 12px;
+      border: 2px solid #ebeef5;
+    }
+
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #dcdfe6;
+    }
+
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      font-size: 17px;
+      font-weight: 600;
+      color: #7f8c8d;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .auth-tab.active {
+      color: #3498db;
+      border-bottom: 3px solid #3498db;
+      margin-bottom: -2px;
+    }
+
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-group label {
+      display: block;
+      color: #34495e;
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid #dcdfe6;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px 0;
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .submit-btn:hover {
+      background: linear-gradient(135deg, #2980b9 0%, #1f6dad 100%);
+      transform: scale(1.02);
+    }
+
+    /* 系统导航栏（3模块切换） */
+    .system-nav {
+      display: flex;
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 30px;
+      gap: 8px;
+    }
+
+    .nav-tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      border-radius: 6px;
+      font-weight: 600;
+      color: #7f8c8d;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .nav-tab.active {
+      background: #3498db;
+      color: white;
+    }
+
+    .nav-tab:hover:not(.active) {
+      background: #ebeef5;
+    }
+
+    /* 模块页面通用样式 */
+    .module-page {
+      display: none;
+    }
+
+    .module-page.active {
+      display: block;
+    }
+
+    .user-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding: 15px 20px;
+      background: #d4edda;
+      border-radius: 8px;
+      border-left: 5px solid #28a745;
+    }
+
+    .user-header span {
+      font-weight: 600;
+      color: #155724;
+      font-size: 16px;
+    }
+
+    .logout-btn, .pwd-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .logout-btn {
+      background: #e74c3c;
+      color: white;
+      margin-left: 10px;
+    }
+
+    .logout-btn:hover {
+      background: #c0392b;
+    }
+
+    .pwd-btn {
+      background: #f39c12;
+      color: white;
+    }
+
+    .pwd-btn:hover {
+      background: #d35400;
+    }
+
+    /* 模块一：个人中心样式 */
+    .user-card {
+      background: #fafbfc;
+      border-radius: 12px;
+      padding: 30px;
+      border: 2px solid #ebeef5;
+      margin-bottom: 30px;
+    }
+
+    .user-card h3 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+
+    .vote-record {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #ebeef5;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .vote-record img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #3498db;
+    }
+
+    .record-info h4 {
+      font-size: 20px;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .record-info p {
+      color: #7f8c8d;
+    }
+
+    .pwd-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    .pwd-modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .modal-content h3 {
+      margin-bottom: 20px;
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .modal-btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 10px 0;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .modal-btn.confirm {
+      background: #3498db;
+      color: white;
+    }
+
+    .modal-btn.cancel {
+      background: #95a5a6;
+      color: white;
+    }
+
+    /* 模块二：投票大厅样式 */
+    .candidates-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 22px;
+      margin-bottom: 30px;
+    }
+
+    .candidate-card {
+      border: 2px solid #ebeef5;
+      border-radius: 12px;
+      padding: 25px 20px;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(145deg, #fafbfc 0%, #ffffff 100%);
+    }
+
+    .candidate-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+      border-color: #3498db;
+    }
+
+    .candidate-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+      border: 4px solid #3498db;
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+    }
+
+    .candidate-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .candidate-desc {
+      color: #7f8c8d;
+      font-size: 14px;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .candidate-votes {
+      color: #3498db;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .vote-btn {
+      width: 100%;
+      padding: 12px 0;
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .vote-btn:disabled {
+      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+      cursor: not-allowed;
+    }
+
+    .vote-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #2980b9 0%, #1f6dad 100%);
+      transform: scale(1.02);
+    }
+
+    /* 模块三：数据统计样式 */
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 25px 20px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+
+    .stat-card .num {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .label {
+      font-size: 15px;
+      opacity: 0.9;
+    }
+
+    .chart-box {
+      background: #fafbfc;
+      border-radius: 12px;
+      padding: 30px;
+      border: 2px solid #ebeef5;
+      margin-bottom: 30px;
+    }
+
+    .chart-box h3 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      font-size: 22px;
+      text-align: center;
+    }
+
+    .empty-chart-tip {
+      text-align: center;
+      color: #999;
+      padding: 50px 0;
+      font-size: 16px;
+    }
+
+    /* 原生进度条得票率样式 */
+    .rate-list {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .rate-item {
+      width: 100%;
+    }
+
+    .rate-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .rate-name {
+      color: #2c3e50;
+    }
+
+    .rate-percent {
+      color: #3498db;
+    }
+
+    .rate-bar-wrap {
+      width: 100%;
+      height: 24px;
+      background: #ebeef5;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .rate-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);
+      border-radius: 12px;
+      transition: width 0.5s ease;
+    }
+
+    .rank-list {
+      background: #fafbfc;
+      border-radius: 12px;
+      padding: 30px;
+      border: 2px solid #ebeef5;
+    }
+
+    .rank-list h3 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      font-size: 22px;
+      text-align: center;
+    }
+
+    .rank-item {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #ebeef5;
+    }
+
+    .rank-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #3498db;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      margin-right: 20px;
+    }
+
+    .rank-item:nth-child(1) .rank-num {
+      background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+    }
+    .rank-item:nth-child(2) .rank-num {
+      background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+    }
+    .rank-item:nth-child(3) .rank-num {
+      background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    }
+
+    .rank-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 18px;
+      color: #2c3e50;
+    }
+
+    .rank-votes {
+      font-weight: 700;
+      font-size: 18px;
+      color: #3498db;
+    }
+  </style>
+</head>
+<body>
+  <!-- 全局提示框 -->
+  <div class="message-box" id="messageBox"></div>
+
+  <div class="container">
+    <h1>🏀 NBA 球星投票系统</h1>
+
+    <!-- 登录/注册页面 -->
+    <div class="auth-box" id="authBox">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login')">登录</div>
+        <div class="auth-tab" onclick="switchAuthTab('register')">注册</div>
+      </div>
+
+      <!-- 登录表单 -->
+      <div class="auth-form active" id="loginForm">
+        <div class="form-group">
+          <label for="loginUsername">用户名</label>
+          <input type="text" id="loginUsername" placeholder="请输入用户名" />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密码</label>
+          <input type="password" id="loginPassword" placeholder="请输入密码" />
+        </div>
+        <button class="submit-btn" onclick="handleLogin()">登录</button>
+      </div>
+
+      <!-- 注册表单 -->
+      <div class="auth-form" id="registerForm">
+        <div class="form-group">
+          <label for="registerUsername">用户名</label>
+          <input type="text" id="registerUsername" placeholder="请设置用户名" />
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">密码</label>
+          <input type="password" id="registerPassword" placeholder="请设置密码" />
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">确认密码</label>
+          <input type="password" id="confirmPassword" placeholder="请再次输入密码" />
+        </div>
+        <button class="submit-btn" onclick="handleRegister()">注册</button>
+      </div>
+    </div>
+
+    <!-- 系统主页面（登录后显示） -->
+    <div id="systemBox" style="display: none;">
+      <!-- 3模块导航栏 -->
+      <div class="system-nav">
+        <div class="nav-tab active" onclick="switchModule('user')">🏠 个人中心</div>
+        <div class="nav-tab" onclick="switchModule('vote')">📊 投票大厅</div>
+        <div class="nav-tab" onclick="switchModule('stats')">📈 数据统计</div>
+      </div>
+
+      <!-- 模块一：个人中心 -->
+      <div class="module-page active" id="userModule">
+        <div class="user-header">
+          <span>欢迎你，<span id="currentUser"></span>！</span>
+          <div>
+            <button class="pwd-btn" onclick="openPwdModal()">修改密码</button>
+            <button class="logout-btn" onclick="handleLogout()">退出登录</button>
+          </div>
+        </div>
+
+        <div class="user-card">
+          <h3>我的投票记录</h3>
+          <div id="myVoteBox">
+            <p style="color: #999; text-align: center; padding: 30px 0;">你还没有投过票，快去投票大厅投票吧！</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模块二：投票大厅 -->
+      <div class="module-page" id="voteModule">
+        <div class="candidates-list" id="candidatesList">
+          <div style="text-align: center; color: #999; grid-column: 1 / -1; padding: 50px 0;">正在加载球星数据...</div>
+        </div>
+      </div>
+
+      <!-- 模块三：数据统计 -->
+      <div class="module-page" id="statsModule">
+        <div class="stats-cards" id="statsCards"></div>
+
+        <div class="chart-box">
+          <h3>球星得票率分布</h3>
+          <div id="chartContainer">
+            <div class="empty-chart-tip" id="emptyChartTip">暂无投票数据，快去投票吧！</div>
+            <div class="rate-list" id="rateList" style="display: none;"></div>
+          </div>
+        </div>
+
+        <div class="rank-list">
+          <h3>实时票数排行榜</h3>
+          <div id="rankList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 修改密码弹窗 -->
+  <div class="pwd-modal" id="pwdModal">
+    <div class="modal-content">
+      <h3>修改密码</h3>
+      <div class="form-group">
+        <label for="oldPwd">原密码</label>
+        <input type="password" id="oldPwd" placeholder="请输入原密码" />
+      </div>
+      <div class="form-group">
+        <label for="newPwd">新密码</label>
+        <input type="password" id="newPwd" placeholder="请输入新密码" />
+      </div>
+      <div class="form-group">
+        <label for="confirmNewPwd">确认新密码</label>
+        <input type="password" id="confirmNewPwd" placeholder="请再次输入新密码" />
+      </div>
+      <div class="modal-btn-group">
+        <button class="modal-btn cancel" onclick="closePwdModal()">取消</button>
+        <button class="modal-btn confirm" onclick="handleChangePwd()">确认修改</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 你的后端API地址
+    const API_BASE_URL = 'https://vote-server-afiwruibza.cn-hangzhou.fcapp.run';
+    let currentUsername = '';
+    let hasVoted = false;
+
+    // ====================== 页面初始化 ======================
+    window.onload = () => {
+      const savedUser = localStorage.getItem('voteUsername');
+      if (savedUser) {
+        currentUsername = savedUser;
+        showSystem();
+        loadMyVote();
+        loadCandidates();
+        loadStats();
+      }
+    };
+
+    // ====================== 工具方法：提示消息（修复版，确保所有提示都能显示）======================
+    function showMessage(text, type) {
+      const box = document.getElementById('messageBox');
+      box.textContent = text;
+      box.className = `message-box ${type}`;
+      // 强制重绘，确保提示显示
+      box.style.display = 'block';
+      setTimeout(() => {
+        box.style.display = 'none';
+      }, 3500);
+    }
+
+    // ====================== 登录/注册相关 ======================
+    function switchAuthTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+      if (tab === 'login') {
+        document.querySelectorAll('.auth-tab')[0].classList.add('active');
+        document.getElementById('loginForm').classList.add('active');
+      } else {
+        document.querySelectorAll('.auth-tab')[1].classList.add('active');
+        document.getElementById('registerForm').classList.add('active');
+      }
+      // 切换标签时清空提示
+      const box = document.getElementById('messageBox');
+      box.style.display = 'none';
+    }
+
+    // 【修复】注册功能，确保提示显示
+    async function handleRegister() {
+      const username = document.getElementById('registerUsername').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const confirmPwd = document.getElementById('confirmPassword').value;
+
+      if (!username || !password) {
+        showMessage('用户名和密码不能为空！', 'error');
+        return;
+      }
+      if (password !== confirmPwd) {
+        showMessage('两次输入的密码不一致！', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=register&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+        const result = await res.json();
+        
+        if (result.code === 200) {
+          showMessage(result.message, 'success');
+          currentUsername = username;
+          localStorage.setItem('voteUsername', username);
+          // 清空表单
+          document.getElementById('registerUsername').value = '';
+          document.getElementById('registerPassword').value = '';
+          document.getElementById('confirmPassword').value = '';
+          // 进入系统
+          setTimeout(() => {
+            showSystem();
+            loadMyVote();
+            loadCandidates();
+            loadStats();
+          }, 1000);
+        } else {
+          // 【修复】注册失败时，显示后端返回的精准提示（如：用户名已存在）
+          showMessage(result.message, 'error');
+        }
+      } catch (e) {
+        showMessage('注册失败，请检查网络', 'error');
+      }
+    }
+
+    // 【修复】登录功能，确保提示显示
+    async function handleLogin() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!username || !password) {
+        showMessage('用户名和密码不能为空！', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+        const result = await res.json();
+        
+        if (result.code === 200) {
+          showMessage(result.message, 'success');
+          currentUsername = username;
+          localStorage.setItem('voteUsername', username);
+          document.getElementById('loginUsername').value = '';
+          document.getElementById('loginPassword').value = '';
+          setTimeout(() => {
+            showSystem();
+            loadMyVote();
+            loadCandidates();
+            loadStats();
+          }, 1000);
+        } else {
+          // 【修复】登录失败时，显示后端返回的精准提示（如：账号未注册/密码错误）
+          showMessage(result.message, 'error');
+        }
+      } catch (e) {
+        showMessage('登录失败，请检查网络', 'error');
+      }
+    }
+
+    function handleLogout() {
+      currentUsername = '';
+      hasVoted = false;
+      localStorage.removeItem('voteUsername');
+      document.getElementById('authBox').style.display = 'block';
+      document.getElementById('systemBox').style.display = 'none';
+      showMessage('已退出登录', 'success');
+    }
+
+    function showSystem() {
+      document.getElementById('authBox').style.display = 'none';
+      document.getElementById('systemBox').style.display = 'block';
+      document.getElementById('currentUser').textContent = currentUsername;
+    }
+
+    // ====================== 模块切换 ======================
+    function switchModule(module) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.module-page').forEach(p => p.classList.remove('active'));
+      
+      if (module === 'user') {
+        document.querySelectorAll('.nav-tab')[0].classList.add('active');
+        document.getElementById('userModule').classList.add('active');
+        loadMyVote();
+      } else if (module === 'vote') {
+        document.querySelectorAll('.nav-tab')[1].classList.add('active');
+        document.getElementById('voteModule').classList.add('active');
+        loadCandidates();
+      } else if (module === 'stats') {
+        document.querySelectorAll('.nav-tab')[2].classList.add('active');
+        document.getElementById('statsModule').classList.add('active');
+        loadStats();
+      }
+    }
+
+    // ====================== 模块一：个人中心功能 ======================
+    function openPwdModal() {
+      document.getElementById('pwdModal').classList.add('active');
+    }
+
+    function closePwdModal() {
+      document.getElementById('pwdModal').classList.remove('active');
+      document.getElementById('oldPwd').value = '';
+      document.getElementById('newPwd').value = '';
+      document.getElementById('confirmNewPwd').value = '';
+    }
+
+    async function handleChangePwd() {
+      const oldPwd = document.getElementById('oldPwd').value;
+      const newPwd = document.getElementById('newPwd').value;
+      const confirmNewPwd = document.getElementById('confirmNewPwd').value;
+
+      if (!oldPwd || !newPwd) {
+        showMessage('密码不能为空！', 'error');
+        return;
+      }
+      if (newPwd !== confirmNewPwd) {
+        showMessage('两次输入的新密码不一致！', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=changePwd&username=${encodeURIComponent(currentUsername)}&oldPwd=${encodeURIComponent(oldPwd)}&newPwd=${encodeURIComponent(newPwd)}`);
+        const result = await res.json();
+        
+        if (result.code === 200) {
+          showMessage(result.message, 'success');
+          closePwdModal();
+          handleLogout();
+        } else {
+          showMessage(result.message, 'error');
+        }
+      } catch (e) {
+        showMessage('密码修改失败', 'error');
+      }
+    }
+
+    async function loadMyVote() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=myVote&username=${encodeURIComponent(currentUsername)}`);
+        const result = await res.json();
+        const box = document.getElementById('myVoteBox');
+        
+        if (result.code === 200 && result.data) {
+          hasVoted = true;
+          const vote = result.data;
+          box.innerHTML = `
+            <div class="vote-record">
+              <img src="${vote.img_url}" alt="${vote.name}" />
+              <div class="record-info">
+                <h4>你已为「${vote.name}」投票</h4>
+                <p>投票时间：${vote.vote_time}</p>
+              </div>
+            </div>
+          `;
+        } else {
+          hasVoted = false;
+          box.innerHTML = `<p style="color: #999; text-align: center; padding: 30px 0;">你还没有投过票，快去投票大厅投票吧！</p>`;
+        }
+      } catch (e) {
+        document.getElementById('myVoteBox').innerHTML = `<p style="color: #999; text-align: center; padding: 30px 0;">加载失败</p>`;
+      }
+    }
+
+    // ====================== 模块二：投票大厅功能 ======================
+    async function loadCandidates() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=candidates`);
+        const result = await res.json();
+        const list = document.getElementById('candidatesList');
+        
+        if (result.code === 200) {
+          const candidates = result.data;
+          list.innerHTML = '';
+          candidates.forEach(candidate => {
+            const card = document.createElement('div');
+            card.className = 'candidate-card';
+            card.innerHTML = `
+              <img src="${candidate.img_url}" alt="${candidate.name}" class="candidate-img" />
+              <div class="candidate-name">${candidate.name}</div>
+              <div class="candidate-desc">${candidate.desc}</div>
+              <div class="candidate-votes">当前票数：${candidate.votes}</div>
+              <button class="vote-btn" onclick="submitVote(${candidate.id})" ${hasVoted ? 'disabled' : ''}>
+                ${hasVoted ? '已投票' : '投TA一票'}
+              </button>
+            `;
+            list.appendChild(card);
+          });
+        }
+      } catch (e) {
+        document.getElementById('candidatesList').innerHTML = `<div style="text-align: center; color: #999; grid-column: 1 / -1; padding: 50px 0;">加载失败</div>`;
+      }
+    }
+
+    async function submitVote(candidateId) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=vote&username=${encodeURIComponent(currentUsername)}&candidateId=${candidateId}`);
+        const result = await res.json();
+        
+        if (result.code === 200) {
+          hasVoted = true;
+          showMessage('投票成功！', 'success');
+          loadMyVote();
+          loadCandidates();
+          loadStats();
+        } else {
+          showMessage(result.message, 'error');
+        }
+      } catch (e) {
+        showMessage('投票失败，请重试', 'error');
+      }
+    }
+
+    // ====================== 模块三：数据统计功能 ======================
+    async function loadStats() {
+      // 加载统计卡片
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=stats`);
+        const result = await res.json();
+        const cardsBox = document.getElementById('statsCards');
+        
+        if (result.code === 200) {
+          const stats = result.data;
+          cardsBox.innerHTML = `
+            <div class="stat-card">
+              <div class="num">${stats.registerUserCount}</div>
+              <div class="label">总注册用户</div>
+            </div>
+            <div class="stat-card">
+              <div class="num">${stats.voteUserCount}</div>
+              <div class="label">参与投票人数</div>
+            </div>
+            <div class="stat-card">
+              <div class="num">${stats.totalVoteCount}</div>
+              <div class="label">总投票数</div>
+            </div>
+            <div class="stat-card">
+              <div class="num">${stats.starCount}</div>
+              <div class="label">候选球星数</div>
+            </div>
+          `;
+        }
+      } catch (e) {
+        document.getElementById('statsCards').innerHTML = '';
+      }
+
+      // 加载排行榜和得票率
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=rank`);
+        const result = await res.json();
+        
+        if (result.code === 200) {
+          const rankData = result.data;
+          renderRankList(rankData);
+          renderRateChart(rankData);
+        }
+      } catch (e) {}
+    }
+
+    function renderRankList(rankData) {
+      const rankBox = document.getElementById('rankList');
+      rankBox.innerHTML = '';
+      rankData.forEach((star, index) => {
+        const item = document.createElement('div');
+        item.className = 'rank-item';
+        item.innerHTML = `
+          <div class="rank-num">${index + 1}</div>
+          <div class="rank-name">${star.name}</div>
+          <div class="rank-votes">${star.votes} 票</div>
+        `;
+        rankBox.appendChild(item);
+      });
+    }
+
+    // 原生进度条渲染得票率
+    function renderRateChart(rankData) {
+      const emptyTip = document.getElementById('emptyChartTip');
+      const rateList = document.getElementById('rateList');
+      
+      // 计算总票数
+      const totalVotes = rankData.reduce((sum, star) => sum + star.votes, 0);
+      
+      // 没有投票数据
+      if (totalVotes === 0) {
+        emptyTip.style.display = 'block';
+        rateList.style.display = 'none';
+        return;
+      }
+
+      // 有数据，渲染进度条
+      emptyTip.style.display = 'none';
+      rateList.style.display = 'flex';
+      rateList.innerHTML = '';
+
+      // 按票数排序，只展示有票的球星
+      const validData = rankData.filter(star => star.votes > 0);
+      validData.forEach(star => {
+        const percent = ((star.votes / totalVotes) * 100).toFixed(2);
+        const item = document.createElement('div');
+        item.className = 'rate-item';
+        item.innerHTML = `
+          <div class="rate-header">
+            <span class="rate-name">${star.name}</span>
+            <span class="rate-percent">${percent}% (${star.votes}票)</span>
+          </div>
+          <div class="rate-bar-wrap">
+            <div class="rate-bar" style="width: ${percent}%"></div>
+          </div>
+        `;
+        rateList.appendChild(item);
+      });
+    }
+  </script>
+</body>
+</html>
