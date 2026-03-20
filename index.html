@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NBA 球星投票系统</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      padding: 50px 20px;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 45px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #3498db;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .welcome-tip {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      color: #155724;
+      padding: 14px 20px;
+      border-radius: 8px;
+      border-left: 5px solid #28a745;
+      margin-bottom: 25px;
+      display: none;
+      font-weight: 500;
+    }
+
+    .message-box {
+      padding: 14px 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-box.success {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    .message-box.error {
+      background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    .username-box {
+      margin-bottom: 35px;
+    }
+
+    .username-box label {
+      display: block;
+      color: #34495e;
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .username-box input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid #dcdfe6;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .username-box input:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin: 45px 0 25px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .candidates-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 22px;
+      margin-bottom: 30px;
+    }
+
+    .candidate-card {
+      border: 2px solid #ebeef5;
+      border-radius: 12px;
+      padding: 25px 20px;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(145deg, #fafbfc 0%, #ffffff 100%);
+    }
+
+    .candidate-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+      border-color: #3498db;
+    }
+
+    .candidate-img {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+      border: 4px solid #3498db;
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+    }
+
+    .candidate-name {
+      font-size: 19px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+
+    .candidate-votes {
+      color: #7f8c8d;
+      font-size: 15px;
+      margin-bottom: 18px;
+      font-weight: 500;
+    }
+
+    .vote-btn {
+      width: 100%;
+      padding: 12px 0;
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .vote-btn:disabled {
+      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+      cursor: not-allowed;
+    }
+
+    .vote-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #2980b9 0%, #1f6dad 100%);
+      transform: scale(1.02);
+    }
+
+    .empty-tip {
+      text-align: center;
+      color: #999;
+      grid-column: 1 / -1;
+      padding: 50px 0;
+      font-size: 17px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏀 NBA 球星投票系统</h1>
+
+    <div class="username-box">
+      <label for="username">请输入你的用户名（用于投票验证）：</label>
+      <input type="text" id="username" placeholder="请输入用户名，比如：张三123" />
+    </div>
+
+    <div class="welcome-tip" id="welcomeTip">
+      欢迎【<span id="userNameText"></span>】，请为你支持的球星投票！
+    </div>
+
+    <div class="message-box" id="messageBox"></div>
+
+    <h2>实时投票列表</h2>
+    <div class="candidates-list" id="candidatesList">
+      <div class="empty-tip">正在加载球星数据...</div>
+    </div>
+  </div>
+
+  <script>
+    // ====================== 核心配置 ======================
+    const API_BASE_URL = 'https://vote-server-afiwruibza.cn-hangzhou.fcapp.run';
+    console.log('✅ 页面加载完成，API地址：', API_BASE_URL);
+
+    // 页面元素
+    const usernameInput = document.getElementById('username');
+    const welcomeTip = document.getElementById('welcomeTip');
+    const userNameText = document.getElementById('userNameText');
+    const candidatesList = document.getElementById('candidatesList');
+    const messageBox = document.getElementById('messageBox');
+
+    // 全局变量
+    let currentUsername = '';
+    let hasVoted = false;
+
+    // ====================== 页面加载时执行 ======================
+    window.onload = async () => {
+      // 监听用户名输入
+      usernameInput.addEventListener('input', (e) => {
+        currentUsername = e.target.value.trim();
+        console.log('✅ 用户名输入：', currentUsername);
+        if (currentUsername) {
+          welcomeTip.style.display = 'block';
+          userNameText.textContent = currentUsername;
+        } else {
+          welcomeTip.style.display = 'none';
+        }
+      });
+
+      // 加载球星列表
+      await loadCandidates();
+    };
+
+    // ====================== 核心方法：加载球星列表 ======================
+    async function loadCandidates() {
+      console.log('✅ loadCandidates 开始执行');
+      try {
+        const response = await fetch(`${API_BASE_URL}/?action=candidates`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+        console.log('✅ 球星列表接口返回：', result);
+
+        if (result.code === 200) {
+          const candidates = result.data || [];
+          if (candidates.length > 0) {
+            renderCandidates(candidates);
+            showMessage('球星列表加载成功！', 'success');
+          } else {
+            candidatesList.innerHTML = '<div class="empty-tip">暂无球星数据</div>';
+            showMessage('后端返回的球星数据为空', 'error');
+          }
+        } else {
+          showMessage('获取球星列表失败：' + result.message, 'error');
+        }
+      } catch (error) {
+        console.error('❌ 球星列表接口报错：', error);
+        showMessage('网络错误，无法连接到后端服务器', 'error');
+      }
+    }
+
+    // ====================== 渲染球星卡片 ======================
+    function renderCandidates(candidates) {
+      console.log('✅ renderCandidates 开始执行，球星数量：', candidates.length);
+      candidatesList.innerHTML = '';
+
+      candidates.forEach(candidate => {
+        const card = document.createElement('div');
+        card.className = 'candidate-card';
+        card.innerHTML = `
+          <img src="${candidate.img_url}" alt="${candidate.name}" class="candidate-img" />
+          <div class="candidate-name">${candidate.name}</div>
+          <div class="candidate-votes">当前票数：${candidate.votes}</div>
+          <button class="vote-btn" onclick="submitVote(${candidate.id})" ${hasVoted ? 'disabled' : ''}>
+            ${hasVoted ? '已投票' : '投TA一票'}
+          </button>
+        `;
+        candidatesList.appendChild(card);
+      });
+      console.log('✅ 球星卡片渲染完成');
+    }
+
+    // ====================== 核心方法：提交投票 ======================
+    window.submitVote = async function(candidateId) {
+      console.log('✅ submitVote 被点击，球星ID：', candidateId);
+      console.log('✅ 当前用户名：', currentUsername);
+      
+      if (!currentUsername) {
+        console.log('❌ 用户名未输入');
+        showMessage('请先输入你的用户名！', 'error');
+        return;
+      }
+
+      // 检查是否已投票
+      try {
+        console.log('✅ 开始检查投票状态...');
+        const checkRes = await fetch(`${API_BASE_URL}/?action=check-vote&username=${encodeURIComponent(currentUsername)}`, {
+          method: 'GET'
+        });
+        const checkResult = await checkRes.json();
+        console.log('✅ 检查投票状态返回：', checkResult);
+
+        if (checkResult.voted) {
+          hasVoted = true;
+          showMessage('你已经投过票了，每人仅能投一票！', 'error');
+          await loadCandidates();
+          return;
+        }
+      } catch (error) {
+        console.error('❌ 检查投票状态报错：', error);
+        showMessage('检查投票状态失败', 'error');
+        return;
+      }
+
+      // 提交投票
+      try {
+        console.log('✅ 开始提交投票...');
+        const voteRes = await fetch(`${API_BASE_URL}/?action=vote&username=${encodeURIComponent(currentUsername)}&candidateId=${candidateId}`, {
+          method: 'GET'
+        });
+        const voteResult = await voteRes.json();
+        console.log('✅ 提交投票返回：', voteResult);
+
+        if (voteResult.code === 200) {
+          hasVoted = true;
+          showMessage(voteResult.message, 'success');
+          await loadCandidates();
+        } else {
+          showMessage(voteResult.message, 'error');
+        }
+      } catch (error) {
+        console.error('❌ 提交投票报错：', error);
+        showMessage('投票失败，请重试', 'error');
+      }
+    };
+
+    // ====================== 工具方法：显示提示消息 ======================
+    function showMessage(text, type) {
+      console.log('✅ showMessage 执行：', text, type);
+      messageBox.textContent = text;
+      messageBox.className = `message-box ${type}`;
+      setTimeout(() => {
+        messageBox.style.display = 'none';
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
