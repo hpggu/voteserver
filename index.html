@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NBA 球星投票系统</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", sans-serif; }
+    body { background: #f5f7fa; padding: 50px 20px; }
+    .container { max-width: 850px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 45px; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 3px solid #3498db; }
+    .welcome-tip { background: #d4edda; color: #155724; padding: 14px 20px; border-radius: 8px; border-left: 5px solid #28a745; margin-bottom: 25px; display: none; }
+    .message-box { padding: 14px 20px; border-radius: 8px; margin: 20px 0; text-align: center; display: none; }
+    .message-box.success { background: #d4edda; color: #155724; display: block; }
+    .message-box.error { background: #f8d7da; color: #721c24; display: block; }
+    .username-box { margin-bottom: 35px; }
+    .username-box label { display: block; color: #34495e; font-weight: 600; margin-bottom: 10px; }
+    .username-box input { width: 100%; padding: 14px 18px; border: 2px solid #dcdfe6; border-radius: 8px; font-size: 16px; outline: none; }
+    h2 { text-align: center; color: #2c3e50; margin: 45px 0 25px; }
+    .candidates-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; }
+    .candidate-card { border: 2px solid #ebeef5; border-radius: 12px; padding: 25px 20px; text-align: center; }
+    .candidate-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 4px solid #3498db; }
+    .candidate-name { font-size: 19px; font-weight: 700; color: #2c3e50; margin-bottom: 10px; }
+    .candidate-votes { color: #7f8c8d; font-size: 15px; margin-bottom: 18px; }
+    .vote-btn { width: 100%; padding: 12px 0; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .vote-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+    .empty-tip { text-align: center; color: #999; grid-column: 1 / -1; padding: 50px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏀 NBA 球星投票系统</h1>
+    <div class="username-box">
+      <label for="username">请输入你的用户名（用于投票验证）：</label>
+      <input type="text" id="username" placeholder="请输入用户名" />
+    </div>
+    <div class="welcome-tip" id="welcomeTip">欢迎【<span id="userNameText"></span>】，请为你支持的球星投票！</div>
+    <div class="message-box" id="messageBox"></div>
+    <h2>实时投票列表</h2>
+    <div class="candidates-list" id="candidatesList">
+      <div class="empty-tip">正在加载球星数据...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'https://vote-server-afiwruibza.cn-hangzhou.fcapp.run';
+    const usernameInput = document.getElementById('username');
+    const welcomeTip = document.getElementById('welcomeTip');
+    const userNameText = document.getElementById('userNameText');
+    const candidatesList = document.getElementById('candidatesList');
+    const messageBox = document.getElementById('messageBox');
+
+    let currentUsername = '';
+    let hasVoted = false;
+
+    // 监听用户名输入
+    usernameInput.addEventListener('input', (e) => {
+      currentUsername = e.target.value.trim();
+      if (currentUsername) {
+        welcomeTip.style.display = 'block';
+        userNameText.textContent = currentUsername;
+      } else {
+        welcomeTip.style.display = 'none';
+      }
+    });
+
+    // 页面加载时加载球星列表
+    window.onload = loadCandidates;
+
+    // 加载球星列表
+    async function loadCandidates() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/?action=candidates`);
+        const result = await res.json();
+        if (result.code === 200) {
+          renderCandidates(result.data);
+          showMessage('球星列表加载成功！', 'success');
+        }
+      } catch (e) {
+        showMessage('加载球星列表失败', 'error');
+      }
+    }
+
+    // 渲染球星卡片
+    function renderCandidates(candidates) {
+      candidatesList.innerHTML = '';
+      candidates.forEach(candidate => {
+        const card = document.createElement('div');
+        card.className = 'candidate-card';
+        card.innerHTML = `
+          <img src="${candidate.img_url}" alt="${candidate.name}" class="candidate-img" />
+          <div class="candidate-name">${candidate.name}</div>
+          <div class="candidate-votes">当前票数：${candidate.votes}</div>
+          <button class="vote-btn" onclick="submitVote(${candidate.id})" ${hasVoted ? 'disabled' : ''}>
+            ${hasVoted ? '已投票' : '投TA一票'}
+          </button>
+        `;
+        candidatesList.appendChild(card);
+      });
+    }
+
+    // 提交投票（全GET，无POST，彻底解决跨域）
+    window.submitVote = async function(candidateId) {
+      if (!currentUsername) {
+        showMessage('请先输入用户名！', 'error');
+        return;
+      }
+
+      // 检查是否已投票
+      try {
+        const checkRes = await fetch(`${API_BASE_URL}/?action=check-vote&username=${encodeURIComponent(currentUsername)}`);
+        const checkResult = await checkRes.json();
+        if (checkResult.voted) {
+          hasVoted = true;
+          showMessage('你已经投过票了！', 'error');
+          await loadCandidates();
+          return;
+        }
+      } catch (e) {
+        showMessage('检查投票状态失败', 'error');
+        return;
+      }
+
+      // 提交投票
+      try {
+        const voteRes = await fetch(`${API_BASE_URL}/?action=vote&username=${encodeURIComponent(currentUsername)}&candidateId=${candidateId}`);
+        const voteResult = await voteRes.json();
+        if (voteResult.code === 200) {
+          hasVoted = true;
+          showMessage('投票成功！', 'success');
+          await loadCandidates();
+        } else {
+          showMessage(voteResult.message, 'error');
+        }
+      } catch (e) {
+        showMessage('投票失败', 'error');
+      }
+    };
+
+    // 提示消息
+    function showMessage(text, type) {
+      messageBox.textContent = text;
+      messageBox.className = `message-box ${type}`;
+      setTimeout(() => messageBox.style.display = 'none', 3500);
+    }
+  </script>
+</body>
+</html>
